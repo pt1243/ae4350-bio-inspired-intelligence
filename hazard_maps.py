@@ -1,12 +1,14 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.ndimage import zoom
 
 
-def generate_hazard_map(size: int = 100, coarse_scale: int = 8, coarse_weight: float = 0.4, n_hazards: int = 12, random_seed: int = 0) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def generate_hazard_map(
+    size: int = 100, coarse_scale: int = 8, coarse_weight: float = 0.4, n_hazards: int = 12, random_seed: int = 0
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     rng = np.random.default_rng(random_seed)
 
-    # for different resolutions, use [-1, 1] as the boundaries. convert back to meters later
+    # note: these are normalized coordinates; convert back to meters later
     x = np.linspace(-1, 1, size)
     y = np.linspace(-1, 1, size)
     X, Y = np.meshgrid(x, y)
@@ -15,18 +17,13 @@ def generate_hazard_map(size: int = 100, coarse_scale: int = 8, coarse_weight: f
     # (e.g. lowlands, hills, smooth maria, etc)
     # approximate something like Perlin noise, which varies smoothly over a large scale
     coarse_size = size // coarse_scale
-    coarse_noise = zoom(
-        rng.random((coarse_size, coarse_size)),
-        zoom=size / coarse_size,
-        order=3
-    )
+    coarse_noise = zoom(rng.random((coarse_size, coarse_size)), zoom=size / coarse_size, order=3)
     # ensure that interpolation returned the correct size, and normalize
     coarse_noise = coarse_noise[:size, :size]
     coarse_noise -= np.min(coarse_noise)
     coarse_noise /= np.max(coarse_noise) + 1e-8
 
     coarse_cost = coarse_noise * coarse_weight
-
 
     crater_cost = np.zeros_like(coarse_cost)
     # small scale crater hazards: Gaussian blobs
@@ -36,9 +33,7 @@ def generate_hazard_map(size: int = 100, coarse_scale: int = 8, coarse_weight: f
         sigma = rng.uniform(0.03, 0.25)  # assume roughly circular
         severity = rng.uniform(0.5, 1)  # some craters are worse than others
 
-        gaussian_cost = severity * np.exp(
-            -0.5 * (((X - crater_x) / sigma)**2 + ((Y - crater_y) / sigma)**2)
-        )
+        gaussian_cost = severity * np.exp(-0.5 * (((X - crater_x) / sigma) ** 2 + ((Y - crater_y) / sigma) ** 2))
         crater_cost += gaussian_cost
 
     # convert from a hazard cost to a hazard map
@@ -51,6 +46,42 @@ def generate_hazard_map(size: int = 100, coarse_scale: int = 8, coarse_weight: f
     # return intermediate values to show a side-by-side figure in the report
     return hazard_map, hazard_cost, coarse_cost, crater_cost
 
+
+def get_local_patch(hazard_map: np.ndarray, x: float, y: float, patch_size: int) -> np.ndarray:
+    if patch_size % 2 == 0:
+        raise ValueError("patch size must be an odd number")
+
+    size = hazard_map.shape[0]
+    half_patch_size = patch_size // 2
+
+    # convert to pixel indices
+    ix = int(np.round((x + 1.0)/2.0 * (size - 1)))
+    iy = int(np.round((y + 1.0)/2.0 * (size - 1)))
+
+    # pad with zeros, in case we are near the edge of the map
+    padded_map = np.pad(
+        hazard_map, pad_width=half_patch_size, mode="constant", constant_values=0.0
+    )
+
+    # adjust coordinates to account for padding
+    ix += half_patch_size
+    iy += half_patch_size
+
+    x0 = ix - half_patch_size
+    x1 = ix + half_patch_size + 1
+    y0 = iy - half_patch_size
+    y1 = iy + half_patch_size + 1
+    if (
+        x0 >= 0
+        and x1 <= padded_map.shape[1]
+        and y0 >= 0
+        and y1 <= padded_map.shape[0]
+    ):
+        patch = padded_map[y0:y1, x0:x1]
+    else:  # fully outside
+        patch = np.zeros((patch_size, patch_size), dtype=hazard_map.dtype)
+    return patch
+    
 
 
 def show_hazard_map(hazard_map: np.ndarray) -> None:
@@ -65,6 +96,7 @@ def show_hazard_map(hazard_map: np.ndarray) -> None:
     ax.set_ylabel("y [m]")
 
     fig.tight_layout()
+
 
 if __name__ == "__main__":
     for seed in range(10):
