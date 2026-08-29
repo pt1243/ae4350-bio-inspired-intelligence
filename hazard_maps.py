@@ -55,13 +55,11 @@ def get_local_patch(hazard_map: np.ndarray, x: float, y: float, patch_size: int)
     half_patch_size = patch_size // 2
 
     # convert to pixel indices
-    ix = int(np.round((x + 1.0)/2.0 * (size - 1)))
-    iy = int(np.round((y + 1.0)/2.0 * (size - 1)))
+    ix = int(np.round((x + 1.0) / 2.0 * (size - 1)))
+    iy = int(np.round((y + 1.0) / 2.0 * (size - 1)))
 
     # pad with zeros, in case we are near the edge of the map
-    padded_map = np.pad(
-        hazard_map, pad_width=half_patch_size, mode="constant", constant_values=0.0
-    )
+    padded_map = np.pad(hazard_map, pad_width=half_patch_size, mode="constant", constant_values=0.0)
 
     # adjust coordinates to account for padding
     ix += half_patch_size
@@ -71,17 +69,11 @@ def get_local_patch(hazard_map: np.ndarray, x: float, y: float, patch_size: int)
     x1 = ix + half_patch_size + 1
     y0 = iy - half_patch_size
     y1 = iy + half_patch_size + 1
-    if (
-        x0 >= 0
-        and x1 <= padded_map.shape[1]
-        and y0 >= 0
-        and y1 <= padded_map.shape[0]
-    ):
+    if x0 >= 0 and x1 <= padded_map.shape[1] and y0 >= 0 and y1 <= padded_map.shape[0]:
         patch = padded_map[y0:y1, x0:x1]
     else:  # fully outside
         patch = np.zeros((patch_size, patch_size), dtype=hazard_map.dtype)
     return patch
-    
 
 
 def show_hazard_map(hazard_map: np.ndarray) -> None:

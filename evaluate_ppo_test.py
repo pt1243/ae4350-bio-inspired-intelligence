@@ -19,7 +19,6 @@ def evaluate(n_episodes=10):
         episode_return = 0.0
 
         while not (terminated or truncated):
-
             action, _ = model.predict(
                 obs,
                 deterministic=True,
@@ -35,10 +34,7 @@ def evaluate(n_episodes=10):
         print(f"Return:         {episode_return:.2f}")
         print(f"Final position: {env.position}")
         print(f"Final velocity: {env.velocity}")
-        print(
-            f"Target error:   "
-            f"{np.linalg.norm(env.position):.2f} m"
-        )
+        print(f"Target error:   {np.linalg.norm(env.position):.2f} m")
 
     print("\n---------------------------")
     print(f"Mean return: {np.mean(returns):.2f}")

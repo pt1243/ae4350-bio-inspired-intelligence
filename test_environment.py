@@ -17,9 +17,7 @@ def run_constant_action(action):
     total_reward = 0.0
 
     while not (terminated or truncated):
-        obs, reward, terminated, truncated, info = env.step(
-            np.array(action, dtype=np.float32)
-        )
+        obs, reward, terminated, truncated, info = env.step(np.array(action, dtype=np.float32))
 
         total_reward += reward
 
@@ -43,18 +41,12 @@ def expected_final_state(
 
     acceleration = action * max_acceleration
 
-    expected_position = (
-        initial_position
-        + initial_velocity * descent_time
-        + 0.5 * acceleration * descent_time**2
-    )
+    expected_position = initial_position + initial_velocity * descent_time + 0.5 * acceleration * descent_time**2
 
-    expected_velocity = (
-        initial_velocity
-        + acceleration * descent_time
-    )
+    expected_velocity = initial_velocity + acceleration * descent_time
 
     return expected_position, expected_velocity
+
 
 if __name__ == "__main__":
     env = LunarHazardEnvironment()
