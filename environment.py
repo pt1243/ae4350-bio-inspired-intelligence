@@ -16,6 +16,7 @@ class LunarHazardEnvironment(gym.Env):
         self.map_half_width = 50  # m, overall hazard map size
         self.map_size = self.map_half_width * 2
         self.patch_size = 7  # grid size of hazard map sample
+        self.nominal_downrange_velocity = 0.25  # m/s
 
         # action and observation setup
         self.action_space = spaces.Box(-1.0, 1.0, shape=(2,), dtype=np.float32)  # x and y acceleration outputs
@@ -42,8 +43,12 @@ class LunarHazardEnvironment(gym.Env):
         )[0]
 
         # TODO: add a downrange initial velocity and position component
-        self.position = np.array([0, 0], dtype=float)
-        self.velocity = self.np_random.uniform(-0.5, 0.5, size=2)
+        self.position = np.array([-self.nominal_downrange_velocity * self.descent_time, 0], dtype=float)
+        self.velocity = np.array([
+            self.np_random.uniform(self.nominal_downrange_velocity - 0.10, self.nominal_downrange_velocity + 0.10),
+            self.np_random.uniform(-0.10, 0.10)
+        ])
+        # self.np_random.uniform(-0.5, 0.5, size=2)
 
         self.time_remaining = self.descent_time
 
@@ -119,4 +124,5 @@ class LunarHazardEnvironment(gym.Env):
             "touchdown_safety": self._get_touchdown_safety(),
             "touchdown_speed": float(np.linalg.norm(self.velocity)),
             "target_error": float(np.linalg.norm(self.position)),
+
         }

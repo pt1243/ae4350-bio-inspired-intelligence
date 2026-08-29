@@ -6,7 +6,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from environment import LunarHazardEnvironment
 
 class TrainingEvaluationCallback(BaseCallback):
-    def __init__(self, eval_frequency=10_000, n_eval_episodes=50, eval_seed_start=10_000, verbose = 0):
+    def __init__(self, eval_frequency=5_000, n_eval_episodes=50, eval_seed_start=10_000, verbose = 0):
         super().__init__(verbose)
 
         self.eval_frequency = eval_frequency
@@ -65,10 +65,10 @@ def train(filename: str):
 
     model = PPO(policy="MlpPolicy", env=env, gamma=0.999, gae_lambda=0.99, verbose=1, seed=0)
 
-    eval_callback = TrainingEvaluationCallback(eval_frequency=10_000, n_eval_episodes=50, verbose=1)
+    eval_callback = TrainingEvaluationCallback(eval_frequency=5_000, n_eval_episodes=50, verbose=1)
 
     model.learn(
-        total_timesteps=500_000,
+        total_timesteps=200_000,
         callback=eval_callback,
         progress_bar=True,
     )

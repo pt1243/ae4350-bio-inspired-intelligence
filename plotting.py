@@ -125,19 +125,21 @@ def plot_learning_curve():
 
     fig.tight_layout()
 
-
-# env = LunarHazardEnvironment()
-# model = PPO.load("ppo_lunar_test")
-
-# episode_data = run_episode_with_trajectory(
-#     env,
-#     model,
-#     seed=40,
-# )
-
-# fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False)
-# plot_time_markers(ax, episode_data, interval=20.0)
-# plot_control_effort(episode_data)
 plot_learning_curve()
+
+
+env = LunarHazardEnvironment()
+model = PPO.load("ppo_lunar")
+
+for i in range(3):
+    episode_data = run_episode_with_trajectory(
+        env,
+        model,
+        seed=500+i,
+    )
+    plot_control_effort(episode_data)
+
+    fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False)
+    plot_time_markers(ax, episode_data, interval=20.0)
 
 plt.show()
