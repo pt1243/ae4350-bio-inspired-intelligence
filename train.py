@@ -1,12 +1,15 @@
+from typing import Any
+
 import numpy as np
 from stable_baselines3 import PPO
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.monitor import Monitor
 
 from environment import LunarHazardEnvironment
 
+
 class TrainingEvaluationCallback(BaseCallback):
-    def __init__(self, eval_frequency=5_000, n_eval_episodes=50, eval_seed_start=10_000, verbose = 0):
+    def __init__(self, eval_frequency=5_000, n_eval_episodes=50, eval_seed_start=10_000, verbose=0):
         super().__init__(verbose)
 
         self.eval_frequency = eval_frequency
@@ -19,15 +22,20 @@ class TrainingEvaluationCallback(BaseCallback):
         self.mean_safeties = []
         self.std_safeties = []
         self.mean_speeds = []
+        self.std_speeds = []
         self.mean_target_errors = []
+        self.std_target_errors = []
+        self.mean_control_efforts = []
+        self.std_control_efforts = []
 
     def _on_step(self):
-        if self.num_timesteps % self.eval_frequency != 0:
+        if self.num_timesteps > 1 and self.num_timesteps % self.eval_frequency != 0:
             return True
         returns = []
         safeties = []
         speeds = []
         target_errors = []
+        control_efforts = []
 
         # separate env for evaluation
         eval_env = LunarHazardEnvironment()
@@ -36,14 +44,18 @@ class TrainingEvaluationCallback(BaseCallback):
             terminated = False
             truncated = False
             episode_return = 0.0
+            control_effort = 0.0
             while not (terminated or truncated):
                 action, _ = self.model.predict(obs, deterministic=True)
+                acceleration = action * eval_env.max_acceleration
+                control_effort += np.sum(acceleration**2) * eval_env.dt
                 obs, reward, terminated, truncated, info = eval_env.step(action)
                 episode_return += reward
             returns.append(episode_return)
             safeties.append(info["touchdown_safety"])
             speeds.append(info["touchdown_speed"])
             target_errors.append(info["target_error"])
+            control_efforts.append(control_effort)
         eval_env.close()
 
         self.eval_steps.append(self.num_timesteps)
@@ -52,23 +64,39 @@ class TrainingEvaluationCallback(BaseCallback):
         self.mean_safeties.append(np.mean(safeties))
         self.std_safeties.append(np.std(safeties))
         self.mean_speeds.append(np.mean(speeds))
+        self.std_speeds.append(np.std(speeds))
         self.mean_target_errors.append(np.mean(target_errors))
+        self.std_target_errors.append(np.std(target_errors))
+        self.mean_control_efforts.append(np.mean(control_efforts))
+        self.std_control_efforts.append(np.std(control_efforts))
 
         return True
 
 
-
-def train(filename: str):
-    env = LunarHazardEnvironment()
+def train_with_parameters(
+    filename: str, env_params: dict[str, Any] | None = None, model_params: dict[str, Any] | None = None
+):
+    if env_params is None:
+        env_params = {}
+    env = LunarHazardEnvironment(**env_params)
     env = Monitor(env)
 
+    base_model_params = {
+        "gamma": 0.999,
+        "gae_lambda": 0.99,
+    }
 
-    model = PPO(policy="MlpPolicy", env=env, gamma=0.999, gae_lambda=0.99, verbose=1, seed=0)
+    if model_params is None:
+        model_params = {}
+    base_model_params |= model_params
 
-    eval_callback = TrainingEvaluationCallback(eval_frequency=5_000, n_eval_episodes=50, verbose=1)
+    model = PPO(policy="MlpPolicy", env=env, verbose=0, seed=1234, **base_model_params)
 
+    eval_callback = TrainingEvaluationCallback()
+
+    print(f"Training model {filename}...")
     model.learn(
-        total_timesteps=200_000,
+        total_timesteps=100_000,
         callback=eval_callback,
         progress_bar=True,
     )
@@ -83,8 +111,13 @@ def train(filename: str):
         mean_safeties=eval_callback.mean_safeties,
         std_safeties=eval_callback.std_safeties,
         mean_speeds=eval_callback.mean_speeds,
+        std_speeds=eval_callback.std_speeds,
         mean_target_errors=eval_callback.mean_target_errors,
+        std_target_errors=eval_callback.std_target_errors,
+        mean_control_efforts=eval_callback.mean_control_efforts,
+        std_control_efforts=eval_callback.std_control_efforts,
     )
 
+
 if __name__ == "__main__":
-    train(filename="ppo_lunar")
+    train_with_parameters("base_model")

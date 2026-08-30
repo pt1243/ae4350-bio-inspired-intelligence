@@ -43,47 +43,6 @@ def evaluate_model(model_path: str, n_episodes: int = 100, seed_start: int = 100
     return results
 
 
-def evaluate_zero_action(
-    n_episodes=100,
-    seed_start=1000,
-):
-    env = LunarHazardEnvironment()
-
-    results = []
-
-    for episode in range(n_episodes):
-        obs, info = env.reset(seed=seed_start + episode)
-
-        terminated = False
-        truncated = False
-
-        episode_return = 0.0
-        control_effort = 0.0
-
-        while not (terminated or truncated):
-            action = np.zeros(2, dtype=np.float32)
-            obs, reward, terminated, truncated, info = env.step(action)
-            episode_return += reward
-
-        results.append(
-            {
-                "return": episode_return,
-                "touchdown_safety": info["touchdown_safety"],
-                "touchdown_speed": info["touchdown_speed"],
-                "target_error": info["target_error"],
-                "control_effort": control_effort,
-            }
-        )
-
-    env.close()
-
-    return results
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-
 def run_episode_with_trajectory(env, model, seed=None):
     """
     Run one deterministic PPO episode and record the physical position
@@ -152,6 +111,5 @@ def print_summary(results):
 
 
 if __name__ == "__main__":
-    # results = evaluate_model(model_path="ppo_lunar_test", n_episodes=100)
-    results = evaluate_zero_action(n_episodes=100)
+    results = evaluate_model(model_path="ppo_lunar", n_episodes=100)
     print_summary(results)

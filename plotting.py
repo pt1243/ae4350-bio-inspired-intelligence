@@ -107,39 +107,155 @@ def plot_control_effort(episode_data):
 
     return fig, ax
 
-def plot_learning_curve():
-    data = np.load("learning_curve_ppo_lunar.npz")
+
+def plot_training_progress():
+    data = np.load("learning_curve_base_model.npz")
 
     steps = data["steps"]
-    means = data["mean_returns"]
-    stds = data["std_returns"]
+    means_return = data["mean_returns"]
+    stds_return = data["std_returns"]
+    means_safety = data["mean_safeties"]
+    stds_safety = data["std_safeties"]
+    means_speed = data["mean_speeds"]
+    stds_speed = data["std_speeds"]
+    means_effort = data["mean_control_efforts"]
+    stds_effort = data["std_control_efforts"]
+    means_distance = data["mean_target_errors"]
+    stds_distance = data["std_target_errors"]
 
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(steps, means, marker="o", label="Mean evaluation return")
-    ax.fill_between(steps, means - stds, means + stds, alpha=0.2, label="±1 standard deviation")
-    ax.set_xlabel("Training steps")
-    ax.set_ylabel("Mean episode returns")
-    ax.set_title("PPO learning curve")
-    ax.grid(True)
-    ax.legend()
+    fig, axes = plt.subplots(nrows=5, ncols=1, figsize=(8, 8), sharex=True)
 
-    fig.tight_layout()
-
-plot_learning_curve()
-
-
-env = LunarHazardEnvironment()
-model = PPO.load("ppo_lunar")
-
-for i in range(3):
-    episode_data = run_episode_with_trajectory(
-        env,
-        model,
-        seed=500+i,
+    # ---------------------------------------------------------
+    # Episode return
+    # ---------------------------------------------------------
+    axes[0].plot(
+        steps,
+        means_return,
+        label="Mean"
     )
-    plot_control_effort(episode_data)
 
-    fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False)
-    plot_time_markers(ax, episode_data, interval=20.0)
+    axes[0].fill_between(
+        steps,
+        means_return - stds_return,
+        means_return + stds_return,
+        alpha=0.2,
+        label="±1 standard deviation"
+    )
+
+    axes[0].set_ylabel("Return")
+    axes[0].set_title("PPO training performance")
+    axes[0].grid(True)
+
+    # ---------------------------------------------------------
+    # Touchdown safety
+    # ---------------------------------------------------------
+    axes[1].plot(
+        steps,
+        means_safety
+    )
+
+    axes[1].fill_between(
+        steps,
+        means_safety - stds_safety,
+        means_safety + stds_safety,
+        alpha=0.2
+    )
+
+    axes[1].set_ylabel("Safety score")
+    axes[1].set_ylim(0, 1)
+    axes[1].grid(True)
+
+    # ---------------------------------------------------------
+    # Touchdown velocity
+    # ---------------------------------------------------------
+    axes[2].plot(
+        steps,
+        means_speed
+    )
+
+    axes[2].fill_between(
+        steps,
+        means_speed - stds_speed,
+        means_speed + stds_speed,
+        alpha=0.2
+    )
+
+    axes[2].set_ylabel("Touchdown speed\n[m/s]")
+    axes[2].grid(True)
+
+    # ---------------------------------------------------------
+    # Control effort
+    # ---------------------------------------------------------
+    axes[3].plot(
+        steps,
+        means_effort
+    )
+
+    axes[3].fill_between(
+        steps,
+        means_effort - stds_effort,
+        means_effort + stds_effort,
+        alpha=0.2
+    )
+
+    axes[3].set_ylabel(
+        r"Control effort"
+        "\n"
+        r"$\int ||a||^2 dt$"
+    )
+    axes[3].grid(True)
+
+    # ---------------------------------------------------------
+    # Target distance
+    # ---------------------------------------------------------
+    axes[4].plot(
+        steps,
+        means_distance
+    )
+
+    axes[4].fill_between(
+        steps,
+        means_distance - stds_distance,
+        means_distance + stds_distance,
+        alpha=0.2
+    )
+
+    axes[4].set_ylabel("Target error\n[m]")
+    axes[4].set_xlabel("Training steps")
+    axes[4].grid(True)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=2,
+        bbox_to_anchor=(0.5, 0.01)
+    )
+
+    fig.tight_layout(
+        rect=[0, 0.05, 1, 1]
+    )
+
+    return fig, axes
+
+
+plot_training_progress()
+
+
+# env = LunarHazardEnvironment()
+# model = PPO.load("base_model")
+
+# for i in range(10):
+#     episode_data = run_episode_with_trajectory(
+#         env,
+#         model,
+#         seed=500 + i,
+#     )
+#     plot_control_effort(episode_data)
+
+#     fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False)
+#     plot_time_markers(ax, episode_data, interval=20.0)
 
 plt.show()

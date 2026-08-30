@@ -6,17 +6,29 @@ from hazard_maps import generate_hazard_map, get_local_patch
 
 
 class LunarHazardEnvironment(gym.Env):
-    def __init__(self):
+    def __init__(
+        self,
+        dt: float = 1.0,
+        descent_time: float = 60,
+        max_acceleration: float = 0.1,
+        map_half_width: int = 50,
+        patch_size: int = 7,
+        nominal_downrange_velocity: float = 0.5,
+        control_weight: float = 5,
+        velocity_weight: float = 20,
+        safety_weight: float = 100,
+        target_weight: float = 20,
+    ):
         super().__init__()
 
         # simulation/dynamics parameters
-        self.dt = 1.0  # s
-        self.descent_time = 120  # s
-        self.max_acceleration = 0.1  # m/s^2
-        self.map_half_width = 50  # m, overall hazard map size
+        self.dt = dt  # s
+        self.descent_time = descent_time  # s
+        self.max_acceleration = max_acceleration  # m/s^2
+        self.map_half_width = map_half_width  # m, overall hazard map size
         self.map_size = self.map_half_width * 2
-        self.patch_size = 7  # grid size of hazard map sample
-        self.nominal_downrange_velocity = 0.25  # m/s
+        self.patch_size = patch_size  # grid size of hazard map sample
+        self.nominal_downrange_velocity = nominal_downrange_velocity  # m/s
 
         # action and observation setup
         self.action_space = spaces.Box(-1.0, 1.0, shape=(2,), dtype=np.float32)  # x and y acceleration outputs
@@ -30,25 +42,25 @@ class LunarHazardEnvironment(gym.Env):
         self.observation_space = spaces.Box(low=-1000, high=1000, shape=(obs_size,), dtype=np.float32)
 
         # reward parameters
-        self.control_weight = 0.01  # propellant expenditure during descent, measured by acceleration actions
-        self.velocity_weight = 10  # horizontal touchdown velocity
-        self.safety_weight = 100  # hazard level at touchdown
-        self.target_weight = 0.2  # weighting for deviating from selected touchdown spot at [0, 0]
+        self.control_weight = control_weight  # propellant expenditure during descent, measured by acceleration actions
+        self.velocity_weight = velocity_weight  # horizontal touchdown velocity
+        self.safety_weight = safety_weight  # hazard level at touchdown
+        self.target_weight = target_weight  # weighting for deviating from selected touchdown spot at [0, 0]
 
-    def reset(self, seed=None, options=None):
+    def reset(self, seed=None):
         super().reset(seed=seed)
 
         self.hazard_map = generate_hazard_map(
             size=self.map_size, random_seed=int(self.np_random.integers(0, np.iinfo(np.int32).max))
         )[0]
 
-        # TODO: add a downrange initial velocity and position component
         self.position = np.array([-self.nominal_downrange_velocity * self.descent_time, 0], dtype=float)
-        self.velocity = np.array([
-            self.np_random.uniform(self.nominal_downrange_velocity - 0.10, self.nominal_downrange_velocity + 0.10),
-            self.np_random.uniform(-0.10, 0.10)
-        ])
-        # self.np_random.uniform(-0.5, 0.5, size=2)
+        self.velocity = np.array(
+            [
+                self.np_random.uniform(self.nominal_downrange_velocity * 0.5, self.nominal_downrange_velocity * 1.5),
+                self.np_random.uniform(-0.25, 0.25),
+            ]
+        )
 
         self.time_remaining = self.descent_time
 
@@ -86,7 +98,7 @@ class LunarHazardEnvironment(gym.Env):
         scaled_position = touchdown_prediction / self.map_half_width
         local_patch = get_local_patch(self.hazard_map, scaled_position[0], scaled_position[1], self.patch_size)
 
-        scaled_velocity = self.velocity / 5.0  # TODO: update
+        scaled_velocity = self.velocity
         scaled_time = self.time_remaining / self.descent_time
 
         observation = np.concatenate([scaled_position, scaled_velocity, [scaled_time], local_patch.flatten()])
@@ -110,8 +122,7 @@ class LunarHazardEnvironment(gym.Env):
     def _get_terminal_reward(self) -> float:
         safety = self._get_touchdown_safety()
 
-        ref_velocity = 1.0  # m/s  TODO: update?
-        velocity_penalty = np.sum(self.velocity**2) / ref_velocity**2
+        velocity_penalty = np.sum(self.velocity**2)
 
         target_penalty = np.sum(self.position**2) / self.map_half_width**2
 
@@ -124,5 +135,4 @@ class LunarHazardEnvironment(gym.Env):
             "touchdown_safety": self._get_touchdown_safety(),
             "touchdown_speed": float(np.linalg.norm(self.velocity)),
             "target_error": float(np.linalg.norm(self.position)),
-
         }
