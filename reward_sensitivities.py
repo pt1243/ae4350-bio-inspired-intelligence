@@ -344,7 +344,7 @@ def plot_reward_sensitivity(
     fig, axes = plt.subplots(
         2,
         2,
-        figsize=(10, 8),
+        figsize=(8, 6),
     )
 
     axes = axes.flatten()
@@ -352,19 +352,19 @@ def plot_reward_sensitivity(
     plot_settings = [
         (
             "control_weight",
-            "Control-effort weight",
+            "Control effort weight",
         ),
         (
             "velocity_weight",
-            "Touchdown-velocity weight",
+            "Touchdown velocity weight",
         ),
         (
             "safety_weight",
-            "Landing-safety weight",
+            "Landing safety weight",
         ),
         (
             "target_weight",
-            "Target-error weight",
+            "Target error weight",
         ),
     ]
 
@@ -386,52 +386,29 @@ def plot_reward_sensitivity(
         min_safety = np.array([r["min_safety"] for r in results])
 
         # Mean ± standard deviation
-        ax.errorbar(
-            values,
-            mean_safety,
-            yerr=std_safety,
-            marker="o",
-            capsize=4,
-            label="Mean ± std",
-        )
+        ax.errorbar(values, mean_safety, yerr=std_safety, marker="o", capsize=4, label=r"Mean ± 1$\sigma$")
 
         # Minimum safety
-        ax.plot(
-            values,
-            min_safety,
-            marker="s",
-            linestyle="--",
-            label="Minimum safety",
-        )
+        ax.plot(values, min_safety, marker="o", c="tab:red", linestyle="--", label="Minimum safety")
 
         # Nominal reward value
         nominal_value = NOMINAL_REWARDS[parameter_name]
 
-        ax.axvline(
-            nominal_value,
-            linestyle=":",
-            label="Nominal value",
-        )
+        ax.axvline(nominal_value, linestyle="--", c="k", label="Nominal value")
 
         # Log scale because sweep spans
         # approximately two orders of magnitude.
         ax.set_xscale("log")
 
-        ax.set_xlabel("Reward weight")
+        ax.set_xlabel("Reward weight [-]")
 
-        ax.set_ylabel("Touchdown safety")
+        ax.set_ylabel("Touchdown safety [-]")
 
-        ax.set_ylim(
-            0,
-            1,
-        )
+        ax.set_ylim(0, 1)
 
         ax.set_title(title)
 
-        ax.grid(
-            True,
-            which="both",
-        )
+        ax.grid(True, which="both")
 
     # --------------------------------------------------------
     # Shared legend
@@ -440,8 +417,8 @@ def plot_reward_sensitivity(
     handles, labels = axes[0].get_legend_handles_labels()
 
     fig.legend(
-        handles,
-        labels,
+        reversed(handles),
+        reversed(labels),
         loc="lower center",
         ncol=3,
         bbox_to_anchor=(0.5, 0.01),

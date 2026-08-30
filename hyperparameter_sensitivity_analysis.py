@@ -185,7 +185,7 @@ def plot_sensitivity(
     clip_results,
     network_results,
 ):
-    fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+    fig, axes = plt.subplots(2, 2, figsize=(10.5, 6))
 
     axes = axes.flatten()
 
@@ -213,19 +213,14 @@ def plot_sensitivity(
         label=r"Mean ± 1$\sigma$",
     )
 
-    axes[0].axvline(
-        nominal_learning_rate,
-        linestyle="--",
-        label="Nominal value",
-        c="k"
-    )
+    axes[0].axvline(nominal_learning_rate, linestyle="--", label="Nominal value", c="k")
 
     axes[0].set_xscale("log")
 
     axes[0].set_xlabel("Learning rate")
     axes[0].set_ylabel("Touchdown safety")
     axes[0].set_ylim(0, 1)
-    axes[0].set_title("Learning-rate sensitivity")
+    axes[0].set_title("Learning rate sensitivity")
     axes[0].grid(True)
 
     # --------------------------------------------------------
@@ -250,11 +245,7 @@ def plot_sensitivity(
         capsize=4,
     )
 
-    axes[1].axvline(
-        nominal_discount_rate,
-        linestyle="--",
-        c="k"
-    )
+    axes[1].axvline(nominal_discount_rate, linestyle="--", c="k")
 
     axes[1].set_xscale("log")
 
@@ -265,10 +256,10 @@ def plot_sensitivity(
     # Reverse so gamma increases from left to right
     axes[1].invert_xaxis()
 
-    axes[1].set_xlabel(r"Discount factor $\gamma$")
+    axes[1].set_xlabel(r"$\gamma$")
     axes[1].set_ylabel("Touchdown safety")
     axes[1].set_ylim(0, 1)
-    axes[1].set_title("Discount-factor sensitivity")
+    axes[1].set_title("Discount factor sensitivity")
     axes[1].grid(True)
 
     # --------------------------------------------------------
@@ -289,16 +280,12 @@ def plot_sensitivity(
         capsize=4,
     )
 
-    axes[2].axvline(
-        nominal_clip,
-        linestyle="--",
-        c="k"
-    )
+    axes[2].axvline(nominal_clip, linestyle="--", c="k")
 
-    axes[2].set_xlabel("PPO clip range")
+    axes[2].set_xlabel(r"$\epsilon$")
     axes[2].set_ylabel("Touchdown safety")
     axes[2].set_ylim(0, 1)
-    axes[2].set_title("Clip-range sensitivity")
+    axes[2].set_title("Clip range sensitivity")
     axes[2].grid(True)
 
     # --------------------------------------------------------
@@ -323,19 +310,15 @@ def plot_sensitivity(
 
     nominal_network_index = network_labels.index(nominal_network)
 
-    axes[3].axvline(
-        nominal_network_index,
-        linestyle="--",
-        c="k"
-    )
+    axes[3].axvline(nominal_network_index, linestyle="--", c="k")
 
     axes[3].set_xticks(x)
     axes[3].set_xticklabels(network_labels)
 
-    axes[3].set_xlabel("Actor/critic hidden layers")
+    axes[3].set_xlabel("Actor and critic hidden layers")
     axes[3].set_ylabel("Touchdown safety")
     axes[3].set_ylim(0, 1)
-    axes[3].set_title("Network-size sensitivity")
+    axes[3].set_title("Neural network size sensitivity")
     axes[3].grid(True)
 
     # --------------------------------------------------------
@@ -343,7 +326,6 @@ def plot_sensitivity(
     # --------------------------------------------------------
 
     handles, labels = axes[0].get_legend_handles_labels()
-    
 
     fig.legend(
         reversed(handles),
@@ -396,7 +378,9 @@ def plot_learning_rate_histories():
     # ax.set_title("Effect of learning rate on PPO training")
 
     ax.grid(True)
-    fig.legend(labels=["1e-5", "1e-4", "3e-4 (nominal)", "1e-3", "5e-3"], loc="outside right center", bbox_to_anchor=[1.3, 0.5])
+    fig.legend(
+        labels=["1e-5", "1e-4", "3e-4 (nominal)", "1e-3", "5e-3"], loc="outside right center", bbox_to_anchor=[1.3, 0.5]
+    )
 
     fig.tight_layout()
     fig.savefig("plots/learning_rate_training_histories.pdf", bbox_inches="tight", dpi=300)

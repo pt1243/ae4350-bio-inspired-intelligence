@@ -203,7 +203,7 @@ def plot_robustness(
     fig, axes = plt.subplots(
         2,
         3,
-        figsize=(11, 7),
+        figsize=(10, 6),
         sharex="col",
     )
 
@@ -267,8 +267,8 @@ def plot_robustness(
         ax_safety.plot(
             values,
             min_safety,
-            marker="s",
-            color="C1",
+            marker="o",
+            color="tab:red",
             linestyle="--",
             label="Minimum safety",
         )
@@ -304,8 +304,8 @@ def plot_robustness(
         ax_speed.plot(
             values,
             max_speed,
-            marker="s",
-            color="C2",
+            marker="o",
+            color="tab:orange",
             linestyle="--",
             label="Maximum touchdown speed",
         )
@@ -333,16 +333,9 @@ def plot_robustness(
     speed_handles, speed_labels = axes[1, 0].get_legend_handles_labels()
 
     # Use descriptive shared labels that apply to both rows
-    handles = [
-        safety_handles[2],
-        safety_handles[0],
-        safety_handles[1],
-        speed_handles[0]
-    ]
+    handles = [safety_handles[2], safety_handles[0], safety_handles[1], speed_handles[0]]
 
-    labels = [
-        safety_labels[2], safety_labels[0], safety_labels[1], speed_labels[0]
-    ]
+    labels = [safety_labels[2], safety_labels[0], safety_labels[1], speed_labels[0]]
 
     fig.legend(
         handles,

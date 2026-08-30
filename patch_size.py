@@ -306,7 +306,7 @@ def plot_patch_size_sensitivity(
     fig, axes = plt.subplots(
         1,
         3,
-        figsize=(13, 4.5),
+        figsize=(10, 4),
     )
 
     # --------------------------------------------------------
@@ -319,16 +319,16 @@ def plot_patch_size_sensitivity(
         yerr=std_safeties,
         marker="o",
         capsize=4,
-        label="Mean ± std",
+        label=r"Mean ± 1$\sigma$",
     )
 
-    axes[0].plot(patch_sizes, min_safeties, marker="s", linestyle="--", c="r", label="Minimum safety")
+    axes[0].plot(patch_sizes, min_safeties, marker="o", linestyle="--", c="tab:red", label="Minimum safety")
 
     axes[0].axvline(NOMINAL_PATCH_SIZE, linestyle="--", label="Nominal patch size", c="k")
 
     axes[0].set_xlabel("Patch size")
 
-    axes[0].set_ylabel("Touchdown safety")
+    axes[0].set_ylabel("Touchdown safety [-]")
 
     axes[0].set_ylim(
         0,
@@ -351,7 +351,7 @@ def plot_patch_size_sensitivity(
         capsize=4,
     )
 
-    axes[1].plot(patch_sizes, max_speeds, marker="s", c="g", label="Maximum speed")
+    axes[1].plot(patch_sizes, max_speeds, marker="o", linestyle="--", c="tab:orange", label="Maximum speed")
 
     axes[1].axvline(NOMINAL_PATCH_SIZE, linestyle="--", c="k")
 
@@ -381,7 +381,7 @@ def plot_patch_size_sensitivity(
 
     axes[2].set_ylabel("Target error [m]")
 
-    axes[2].set_title("Landing-site deviation")
+    axes[2].set_title("Landing site deviation")
 
     axes[2].grid(True)
 

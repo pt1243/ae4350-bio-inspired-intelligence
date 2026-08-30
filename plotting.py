@@ -35,7 +35,15 @@ def plot_trajectory(fig, ax, episode_data, map_half_width, show_actual_position=
     ax.scatter(0.0, 0.0, marker="x", s=100, c="k", label="Nominal target")
 
     # Initial predicted touchdown
-    ax.scatter(predictions[0, 0], predictions[0, 1], marker="x", s=70, c="tab:red", zorder=9, label="Initial predicted touchdown")
+    ax.scatter(
+        predictions[0, 0],
+        predictions[0, 1],
+        marker="x",
+        s=70,
+        c="tab:red",
+        zorder=9,
+        label="Initial predicted touchdown",
+    )
     # Predicted touchdown point trajectory
     ax.plot(predictions[:, 0], predictions[:, 1], color="tab:pink", label="Predicted touchdown position", linewidth=2)
 
@@ -43,10 +51,10 @@ def plot_trajectory(fig, ax, episode_data, map_half_width, show_actual_position=
     if show_actual_position:
         ax.plot(positions[:, 0], positions[:, 1], linestyle="--", label="Lander position")
 
-
-
     # Actual final touchdown
-    ax.scatter(positions[-1, 0], positions[-1, 1], marker="x", s=70, c="C0", zorder=10, label="Final touchdown position")
+    ax.scatter(
+        positions[-1, 0], positions[-1, 1], marker="x", s=70, c="C0", zorder=10, label="Final touchdown position"
+    )
 
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
@@ -57,7 +65,6 @@ def plot_trajectory(fig, ax, episode_data, map_half_width, show_actual_position=
 
     ax.set_aspect("equal")
     ax.legend()
-
 
 
 def plot_time_markers(ax, episode_data, interval=20.0):
@@ -178,7 +185,6 @@ def plot_training_progress():
 
     handles, labels = axes[0].get_legend_handles_labels()
     handles_1, labels_1 = axes[1].get_legend_handles_labels()
-    
 
     fig.legend(handles + handles_1, labels + labels_1, loc="lower center", ncol=3, bbox_to_anchor=(0.5, 0.01))
 
@@ -202,7 +208,7 @@ model = PPO.load("base_model")
 #     plot_control_effort(episode_data)
 
 #     fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False, title=f" seed {500+i}")
-    # plot_time_markers(ax, episode_data, interval=10.0)
+# plot_time_markers(ax, episode_data, interval=10.0)
 
 
 # 506 - large movement
@@ -211,10 +217,8 @@ model = PPO.load("base_model")
 # 543 - nice and smooth
 # 546 - starts in a central low depression
 for seed in [533, 543, 546]:
-    episode_data = run_episode_with_trajectory(
-        env, model, seed=seed
-    )
-    print(f"Seed {seed}: return = {episode_data["return"]:.2f}")
+    episode_data = run_episode_with_trajectory(env, model, seed=seed)
+    print(f"Seed {seed}: return = {episode_data['return']:.2f}")
     fig, axs = plt.subplots(2, 1, figsize=(6, 7), height_ratios=[4, 1])
     plot_trajectory(fig, axs[0], episode_data, env.map_half_width, show_actual_position=False)
     plot_control_effort(axs[1], episode_data)

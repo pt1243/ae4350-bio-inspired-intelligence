@@ -76,7 +76,7 @@ def get_local_patch(hazard_map: np.ndarray, x: float, y: float, patch_size: int)
     return patch
 
 
-def show_hazard_map(hazard_map: np.ndarray) -> None:
+def plot_hazard_map(hazard_map: np.ndarray) -> None:
     fig, ax = plt.subplots(figsize=(7, 6))
 
     size = hazard_map.shape[0] / 2
@@ -90,8 +90,61 @@ def show_hazard_map(hazard_map: np.ndarray) -> None:
     fig.tight_layout()
 
 
-if __name__ == "__main__":
-    for seed in range(10):
-        show_hazard_map(generate_hazard_map(coarse_weight=0.4, random_seed=seed)[0])
+def plot_hazard_map_components(hazard_map: np.ndarray, coarse_cost: np.ndarray, crater_cost: np.ndarray):
+    fig, axs = plt.subplots(1, 3, figsize=(10, 5))
 
-    plt.show()
+    size = hazard_map.shape[0] / 2
+
+    hazard_cmap = "OrRd"
+    safety_cmap = "viridis"
+    hazard_min = min(np.min(coarse_cost), np.min(crater_cost))
+    hazard_max = max(np.max(coarse_cost), np.max(crater_cost))
+
+    img_0 = axs[0].imshow(
+        coarse_cost,
+        extent=[-size, size, -size, size],
+        origin="lower",
+        cmap=hazard_cmap,
+        vmin=hazard_min,
+        vmax=hazard_max,
+    )
+    fig.colorbar(img_0, ax=axs[0], label="Hazard level", fraction=0.045, pad=0.04)
+    axs[0].set_title("Large-scale terrain")
+    axs[0].set_xlabel("x [m]")
+    axs[0].set_ylabel("y [m]")
+
+    img_1 = axs[1].imshow(
+        crater_cost,
+        extent=[-size, size, -size, size],
+        origin="lower",
+        cmap=hazard_cmap,
+        vmin=hazard_min,
+        vmax=hazard_max,
+    )
+    fig.colorbar(img_1, ax=axs[1], label="Hazard level", fraction=0.045, pad=0.04)
+    axs[1].set_title("Crater hazards")
+    axs[1].set_xlabel("x [m]")
+    axs[1].set_ylabel("y [m]")
+
+    img_2 = axs[2].imshow(
+        hazard_map, extent=[-size, size, -size, size], origin="lower", cmap=safety_cmap, vmin=0, vmax=1
+    )
+    fig.colorbar(img_2, ax=axs[2], label="Safety", fraction=0.045, pad=0.04)
+    axs[2].set_title("Combined hazard map")
+    axs[2].set_xlabel("x [m]")
+    axs[2].set_ylabel("y [m]")
+
+    for ax in axs:
+        ax.set_aspect("equal")
+
+    fig.tight_layout()
+
+    fig.savefig("plots/hazard_maps.pdf", bbox_inches="tight", dpi=300)
+
+
+if __name__ == "__main__":
+    # for seed in range(10):
+    #     plot_hazard_map(generate_hazard_map(coarse_weight=0.4, random_seed=seed)[0])
+    hazard_map, _, coarse, craters = generate_hazard_map(random_seed=0)
+    plot_hazard_map_components(hazard_map, coarse, craters)
+    # plt.show()
