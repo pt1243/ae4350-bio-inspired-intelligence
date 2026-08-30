@@ -1,3 +1,5 @@
+from itertools import count
+
 import numpy as np
 import matplotlib.pyplot as plt
 from stable_baselines3 import PPO
@@ -5,7 +7,7 @@ from evaluation import run_episode_with_trajectory
 from environment import LunarHazardEnvironment
 
 
-def plot_trajectory(episode_data, map_half_width, show_actual_position=True):
+def plot_trajectory(fig, ax, episode_data, map_half_width, show_actual_position=True):
     """
     Plot the hazard map together with:
       - actual horizontal position over time
@@ -18,8 +20,6 @@ def plot_trajectory(episode_data, map_half_width, show_actual_position=True):
     predictions = episode_data["touchdown_predictions"]
     hazard_map = episode_data["hazard_map"]
 
-    fig, ax = plt.subplots(figsize=(8, 7))
-
     # Hazard map
     image = ax.imshow(
         hazard_map,
@@ -29,27 +29,28 @@ def plot_trajectory(episode_data, map_half_width, show_actual_position=True):
         vmax=1,
     )
 
-    fig.colorbar(image, ax=ax, label="Landing safety")
+    fig.colorbar(image, ax=ax, label="Safety score")
 
+    # Nominal landing target
+    ax.scatter(0.0, 0.0, marker="x", s=100, c="k", label="Nominal target")
+
+    # Initial predicted touchdown
+    ax.scatter(predictions[0, 0], predictions[0, 1], marker="x", s=70, c="tab:red", zorder=9, label="Initial predicted touchdown")
     # Predicted touchdown point trajectory
-    ax.plot(predictions[:, 0], predictions[:, 1], label="Predicted touchdown", linewidth=2)
+    ax.plot(predictions[:, 0], predictions[:, 1], color="tab:pink", label="Predicted touchdown position", linewidth=2)
 
     # Physical horizontal position
     if show_actual_position:
         ax.plot(positions[:, 0], positions[:, 1], linestyle="--", label="Lander position")
 
-    # Nominal landing target
-    ax.scatter(0.0, 0.0, marker="x", s=100, label="Original target")
 
-    # Initial predicted touchdown
-    ax.scatter(predictions[0, 0], predictions[0, 1], marker="o", s=70, label="Initial prediction")
 
     # Actual final touchdown
-    ax.scatter(positions[-1, 0], positions[-1, 1], marker="*", s=150, label="Touchdown")
+    ax.scatter(positions[-1, 0], positions[-1, 1], marker="x", s=70, c="C0", zorder=10, label="Final touchdown position")
 
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
-    ax.set_title(f"PPO terminal descent trajectory\nReturn = {episode_data['return']:.1f}")
+    ax.set_title(f"Trajectory")
 
     ax.set_xlim(-map_half_width, map_half_width)
     ax.set_ylim(-map_half_width, map_half_width)
@@ -57,9 +58,6 @@ def plot_trajectory(episode_data, map_half_width, show_actual_position=True):
     ax.set_aspect("equal")
     ax.legend()
 
-    fig.tight_layout()
-
-    return fig, ax
 
 
 def plot_time_markers(ax, episode_data, interval=20.0):
@@ -86,12 +84,10 @@ def plot_time_markers(ax, episode_data, interval=20.0):
             next_time += interval
 
 
-def plot_control_effort(episode_data):
+def plot_control_effort(ax, episode_data):
     times = episode_data["times"][:-1]
 
     actions = episode_data["actions"]
-
-    fig, ax = plt.subplots(figsize=(8, 4))
 
     ax.plot(times, actions[:, 0], label="Horizontal")
     ax.plot(times, actions[:, 1], label="Vertical")
@@ -99,13 +95,10 @@ def plot_control_effort(episode_data):
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Acceleration output [-]")
     ax.set_title("Control effort during descent")
+    ax.set_ylim(-1.1, 1.1)
 
     ax.grid(True)
-    ax.legend()
-
-    fig.tight_layout()
-
-    return fig, ax
+    ax.legend(ncols=2)
 
 
 def plot_training_progress():
@@ -122,8 +115,9 @@ def plot_training_progress():
     stds_effort = data["std_control_efforts"]
     means_distance = data["mean_target_errors"]
     stds_distance = data["std_target_errors"]
+    min_safety = data["min_safeties"]
 
-    fig, axes = plt.subplots(nrows=5, ncols=1, figsize=(8, 8), sharex=True)
+    fig, axes = plt.subplots(nrows=5, ncols=1, figsize=(6, 7), sharex=True)
 
     # ---------------------------------------------------------
     # Episode return
@@ -134,8 +128,8 @@ def plot_training_progress():
         steps, means_return - stds_return, means_return + stds_return, alpha=0.2, label="±1 standard deviation"
     )
 
-    axes[0].set_ylabel("Return")
-    axes[0].set_title("PPO training performance")
+    axes[0].set_ylabel("Total reward [-]")
+    # axes[0].set_title("PPO training performance")
     axes[0].grid(True)
 
     # ---------------------------------------------------------
@@ -145,9 +139,11 @@ def plot_training_progress():
 
     axes[1].fill_between(steps, means_safety - stds_safety, means_safety + stds_safety, alpha=0.2)
 
-    axes[1].set_ylabel("Safety score")
+    axes[1].set_ylabel("Safety score [-]")
     axes[1].set_ylim(0, 1)
     axes[1].grid(True)
+
+    axes[1].plot(steps, min_safety, linestyle="--", c="r", label="Minimum safety score")
 
     # ---------------------------------------------------------
     # Touchdown velocity
@@ -166,11 +162,7 @@ def plot_training_progress():
 
     axes[3].fill_between(steps, means_effort - stds_effort, means_effort + stds_effort, alpha=0.2)
 
-    axes[3].set_ylabel(
-        r"Control effort"
-        "\n"
-        r"$\int ||a||^2 dt$"
-    )
+    axes[3].set_ylabel("Control effort\n[m$^2$/s$^3$]")
     axes[3].grid(True)
 
     # ---------------------------------------------------------
@@ -180,26 +172,28 @@ def plot_training_progress():
 
     axes[4].fill_between(steps, means_distance - stds_distance, means_distance + stds_distance, alpha=0.2)
 
-    axes[4].set_ylabel("Target error\n[m]")
-    axes[4].set_xlabel("Training steps")
+    axes[4].set_ylabel("Target error [m]")
+    axes[4].set_xlabel("Training steps [-]")
     axes[4].grid(True)
 
     handles, labels = axes[0].get_legend_handles_labels()
+    handles_1, labels_1 = axes[1].get_legend_handles_labels()
+    
 
-    fig.legend(handles, labels, loc="lower center", ncol=2, bbox_to_anchor=(0.5, 0.01))
+    fig.legend(handles + handles_1, labels + labels_1, loc="lower center", ncol=3, bbox_to_anchor=(0.5, 0.01))
 
     fig.tight_layout(rect=[0, 0.05, 1, 1])
 
-    return fig, axes
+    fig.savefig("training_progress.pdf", bbox_inches="tight", dpi=300)
 
 
 plot_training_progress()
 
 
-# env = LunarHazardEnvironment()
-# model = PPO.load("base_model")
+env = LunarHazardEnvironment()
+model = PPO.load("base_model")
 
-# for i in range(10):
+# for i in count():
 #     episode_data = run_episode_with_trajectory(
 #         env,
 #         model,
@@ -207,7 +201,24 @@ plot_training_progress()
 #     )
 #     plot_control_effort(episode_data)
 
-#     fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False)
-#     plot_time_markers(ax, episode_data, interval=20.0)
+#     fig, ax = plot_trajectory(episode_data, env.map_half_width, show_actual_position=False, title=f" seed {500+i}")
+    # plot_time_markers(ax, episode_data, interval=10.0)
 
-plt.show()
+
+# 506 - large movement
+# 533 - squiggling
+# 540 - nice long trajectory
+# 543 - nice and smooth
+# 546 - starts in a central low depression
+for seed in [533, 543, 546]:
+    episode_data = run_episode_with_trajectory(
+        env, model, seed=seed
+    )
+    print(f"Seed {seed}: return = {episode_data["return"]:.2f}")
+    fig, axs = plt.subplots(2, 1, figsize=(6, 7), height_ratios=[4, 1])
+    plot_trajectory(fig, axs[0], episode_data, env.map_half_width, show_actual_position=False)
+    plot_control_effort(axs[1], episode_data)
+    fig.tight_layout()
+    fig.savefig(f"trajectory_seed_{seed}.pdf", bbox_inches="tight", dpi=300)
+
+# plt.show()

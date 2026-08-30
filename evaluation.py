@@ -111,5 +111,5 @@ def print_summary(results):
 
 
 if __name__ == "__main__":
-    results = evaluate_model(model_path="ppo_lunar", n_episodes=100)
+    results = evaluate_model(model_path="base_model", n_episodes=100)
     print_summary(results)

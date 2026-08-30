@@ -27,6 +27,7 @@ class TrainingEvaluationCallback(BaseCallback):
         self.std_target_errors = []
         self.mean_control_efforts = []
         self.std_control_efforts = []
+        self.min_safeties = []
 
     def _on_step(self):
         if self.num_timesteps > 1 and self.num_timesteps % self.eval_frequency != 0:
@@ -69,6 +70,7 @@ class TrainingEvaluationCallback(BaseCallback):
         self.std_target_errors.append(np.std(target_errors))
         self.mean_control_efforts.append(np.mean(control_efforts))
         self.std_control_efforts.append(np.std(control_efforts))
+        self.min_safeties.append(np.min(safeties))
 
         return True
 
@@ -154,6 +156,7 @@ def train_with_parameters(
         std_target_errors=eval_callback.std_target_errors,
         mean_control_efforts=eval_callback.mean_control_efforts,
         std_control_efforts=eval_callback.std_control_efforts,
+        min_safeties=eval_callback.min_safeties,
     )
 
     if record_clipping:
