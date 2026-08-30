@@ -422,10 +422,6 @@ if __name__ == "__main__":
         descent_results,
     )
 
-    fig.savefig(
-        "ppo_environment_robustness.pdf",
-        bbox_inches="tight",
-        dpi=300
-    )
+    fig.savefig("ppo_environment_robustness.pdf", bbox_inches="tight", dpi=300)
 
     plt.show()

@@ -83,7 +83,6 @@ def evaluate_model(
         truncated = False
 
         control_effort = 0.0
-        
 
         while not (terminated or truncated):
             action, _ = model.predict(
@@ -230,11 +229,11 @@ def run_patch_size(
 
     print(f"  Safety: {metrics['mean_safety']:.3f} ± {metrics['std_safety']:.3f}")
 
-    print(f"  Minimum safety:  {metrics["min_safety"]:.3f}")
+    print(f"  Minimum safety:  {metrics['min_safety']:.3f}")
 
     print(f"  Touchdown speed: {metrics['mean_speed']:.3f} ± {metrics['std_speed']:.3f} m/s")
 
-    print(f"  Maximum speed:  {metrics["max_speed"]:.3f}")
+    print(f"  Maximum speed:  {metrics['max_speed']:.3f}")
 
     print(f"  Target error: {metrics['mean_target_error']:.2f} ± {metrics['std_target_error']:.2f} m")
 
@@ -323,21 +322,9 @@ def plot_patch_size_sensitivity(
         label="Mean ± std",
     )
 
-    axes[0].plot(
-        patch_sizes,
-        min_safeties,
-        marker="s",
-        linestyle="--",
-        c="r",
-        label="Minimum safety"
-    )
+    axes[0].plot(patch_sizes, min_safeties, marker="s", linestyle="--", c="r", label="Minimum safety")
 
-    axes[0].axvline(
-        NOMINAL_PATCH_SIZE,
-        linestyle="--",
-        label="Nominal patch size",
-        c="k"
-    )
+    axes[0].axvline(NOMINAL_PATCH_SIZE, linestyle="--", label="Nominal patch size", c="k")
 
     axes[0].set_xlabel("Patch size")
 
@@ -364,19 +351,9 @@ def plot_patch_size_sensitivity(
         capsize=4,
     )
 
-    axes[1].plot(
-        patch_sizes,
-        max_speeds,
-        marker="s",
-        c="g",
-        label="Maximum speed"
-    )
+    axes[1].plot(patch_sizes, max_speeds, marker="s", c="g", label="Maximum speed")
 
-    axes[1].axvline(
-        NOMINAL_PATCH_SIZE,
-        linestyle="--",
-        c="k"
-    )
+    axes[1].axvline(NOMINAL_PATCH_SIZE, linestyle="--", c="k")
 
     axes[1].set_xlabel("Patch size")
 
@@ -398,11 +375,7 @@ def plot_patch_size_sensitivity(
         capsize=4,
     )
 
-    axes[2].axvline(
-        NOMINAL_PATCH_SIZE,
-        linestyle="--",
-        c="k"
-    )
+    axes[2].axvline(NOMINAL_PATCH_SIZE, linestyle="--", c="k")
 
     axes[2].set_xlabel("Patch size")
 
@@ -491,10 +464,6 @@ if __name__ == "__main__":
 
     fig, axes = plot_patch_size_sensitivity(results)
 
-    fig.savefig(
-        "ppo_patch_size_sensitivity.pdf",
-        bbox_inches="tight",
-        dpi=300
-    )
+    fig.savefig("ppo_patch_size_sensitivity.pdf", bbox_inches="tight", dpi=300)
 
     plt.show()
