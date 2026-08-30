@@ -210,13 +210,14 @@ def plot_sensitivity(
         yerr=lr_stds,
         marker="o",
         capsize=4,
-        label="Mean ± std",
+        label=r"Mean ± 1$\sigma$",
     )
 
     axes[0].axvline(
         nominal_learning_rate,
         linestyle="--",
         label="Nominal value",
+        c="k"
     )
 
     axes[0].set_xscale("log")
@@ -252,6 +253,7 @@ def plot_sensitivity(
     axes[1].axvline(
         nominal_discount_rate,
         linestyle="--",
+        c="k"
     )
 
     axes[1].set_xscale("log")
@@ -290,6 +292,7 @@ def plot_sensitivity(
     axes[2].axvline(
         nominal_clip,
         linestyle="--",
+        c="k"
     )
 
     axes[2].set_xlabel("PPO clip range")
@@ -323,6 +326,7 @@ def plot_sensitivity(
     axes[3].axvline(
         nominal_network_index,
         linestyle="--",
+        c="k"
     )
 
     axes[3].set_xticks(x)
@@ -339,10 +343,11 @@ def plot_sensitivity(
     # --------------------------------------------------------
 
     handles, labels = axes[0].get_legend_handles_labels()
+    
 
     fig.legend(
-        handles,
-        labels,
+        reversed(handles),
+        reversed(labels),
         loc="lower center",
         ncol=2,
         bbox_to_anchor=(0.5, 0.01),
@@ -350,7 +355,7 @@ def plot_sensitivity(
 
     fig.tight_layout(rect=[0, 0.06, 1, 1])
 
-    fig.savefig("ppo_hyperparameter_sensitivity.pdf", bbox_inches="tight", dpi=300)
+    fig.savefig("plots/ppo_hyperparameter_sensitivity.pdf", bbox_inches="tight", dpi=300)
 
     return fig, axes
 
@@ -358,7 +363,7 @@ def plot_sensitivity(
 def plot_learning_rate_histories():
     learning_rates = LEARNING_RATES
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(5, 3))
 
     for lr in learning_rates:
         model_name = f"sensitivity_learning_rate_{lr:.0e}"
@@ -375,9 +380,9 @@ def plot_learning_rate_histories():
         mean_returns = data["mean_returns"]
 
         if lr == 3e-4:
-            label = f"{lr:g} (nominal)"
+            label = f"{lr:e} (nominal)"
         else:
-            label = f"{lr:g}"
+            label = f"{lr:e}"
 
         ax.plot(
             steps,
@@ -386,15 +391,15 @@ def plot_learning_rate_histories():
             label=label,
         )
 
-    ax.set_xlabel("Training steps")
-    ax.set_ylabel("Mean evaluation return")
-    ax.set_title("Effect of learning rate on PPO training")
+    ax.set_xlabel("Training steps [-]")
+    ax.set_ylabel("Mean total reward [-]")
+    # ax.set_title("Effect of learning rate on PPO training")
 
     ax.grid(True)
-    ax.legend()
+    fig.legend(labels=["1e-5", "1e-4", "3e-4 (nominal)", "1e-3", "5e-3"], loc="outside right center", bbox_to_anchor=[1.3, 0.5])
 
     fig.tight_layout()
-    fig.savefig("learning_rate_training_histories.pdf", bbox_inches="tight", dpi=300)
+    fig.savefig("plots/learning_rate_training_histories.pdf", bbox_inches="tight", dpi=300)
 
     return fig, ax
 
@@ -411,4 +416,4 @@ if __name__ == "__main__":
     plot_sensitivity(lr_results, gamma_results, clip_results, network_results)
     plot_learning_rate_histories()
 
-    plt.show()
+    # plt.show()

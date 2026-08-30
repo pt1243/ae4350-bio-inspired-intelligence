@@ -498,8 +498,8 @@ if __name__ == "__main__":
     fig, axes = plot_reward_sensitivity(results)
 
     fig.savefig(
-        "ppo_reward_weight_sensitivity.pdf",
+        "plots/ppo_reward_weight_sensitivity.pdf",
         bbox_inches="tight",
     )
 
-    plt.show()
+    # plt.show()

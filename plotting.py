@@ -184,7 +184,7 @@ def plot_training_progress():
 
     fig.tight_layout(rect=[0, 0.05, 1, 1])
 
-    fig.savefig("training_progress.pdf", bbox_inches="tight", dpi=300)
+    fig.savefig("plots/training_progress.pdf", bbox_inches="tight", dpi=300)
 
 
 plot_training_progress()
@@ -219,6 +219,6 @@ for seed in [533, 543, 546]:
     plot_trajectory(fig, axs[0], episode_data, env.map_half_width, show_actual_position=False)
     plot_control_effort(axs[1], episode_data)
     fig.tight_layout()
-    fig.savefig(f"trajectory_seed_{seed}.pdf", bbox_inches="tight", dpi=300)
+    fig.savefig(f"plots/trajectory_seed_{seed}.pdf", bbox_inches="tight", dpi=300)
 
 # plt.show()

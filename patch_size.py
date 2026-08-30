@@ -464,6 +464,6 @@ if __name__ == "__main__":
 
     fig, axes = plot_patch_size_sensitivity(results)
 
-    fig.savefig("ppo_patch_size_sensitivity.pdf", bbox_inches="tight", dpi=300)
+    fig.savefig("plots/ppo_patch_size_sensitivity.pdf", bbox_inches="tight", dpi=300)
 
-    plt.show()
+    # plt.show()

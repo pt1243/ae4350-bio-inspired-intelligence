@@ -203,7 +203,7 @@ def plot_robustness(
     fig, axes = plt.subplots(
         2,
         3,
-        figsize=(13, 8),
+        figsize=(11, 7),
         sharex="col",
     )
 
@@ -254,23 +254,23 @@ def plot_robustness(
             yerr=std_safety,
             marker="o",
             capsize=4,
-            label="Mean ± std",
+            label=r"Mean ± 1$\sigma$",
+        )
+
+        ax_safety.axvline(
+            nominal_value,
+            linestyle="--",
+            color="k",
+            label="Training condition",
         )
 
         ax_safety.plot(
             values,
             min_safety,
             marker="s",
-            color="r",
+            color="C1",
             linestyle="--",
-            label="Minimum",
-        )
-
-        ax_safety.axvline(
-            nominal_value,
-            linestyle="-",
-            color="k",
-            label="Training condition",
+            label="Minimum safety",
         )
 
         ax_safety.set_ylim(0, 1)
@@ -305,14 +305,14 @@ def plot_robustness(
             values,
             max_speed,
             marker="s",
-            color="r",
+            color="C2",
             linestyle="--",
-            label="Maximum",
+            label="Maximum touchdown speed",
         )
 
         ax_speed.axvline(
             nominal_value,
-            linestyle="-",
+            linestyle="--",
             color="k",
             label="Training condition",
         )
@@ -337,19 +337,18 @@ def plot_robustness(
         safety_handles[2],
         safety_handles[0],
         safety_handles[1],
+        speed_handles[0]
     ]
 
     labels = [
-        "Mean ± std",
-        "Worst case (min safety / max speed)",
-        "Training condition",
+        safety_labels[2], safety_labels[0], safety_labels[1], speed_labels[0]
     ]
 
     fig.legend(
         handles,
         labels,
         loc="lower center",
-        ncol=3,
+        ncol=4,
         bbox_to_anchor=(0.5, 0.01),
     )
 
@@ -422,6 +421,6 @@ if __name__ == "__main__":
         descent_results,
     )
 
-    fig.savefig("ppo_environment_robustness.pdf", bbox_inches="tight", dpi=300)
+    fig.savefig("plots/ppo_environment_robustness.pdf", bbox_inches="tight", dpi=300)
 
-    plt.show()
+    # plt.show()
