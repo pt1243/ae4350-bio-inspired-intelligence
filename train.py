@@ -72,9 +72,44 @@ class TrainingEvaluationCallback(BaseCallback):
 
         return True
 
+class PPOTrainingDiagnosticsCallback(BaseCallback):
+    def __init__(self):
+        super().__init__()
+
+        self.steps = []
+        self.clip_fractions = []
+        # self.approx_kls = []
+
+    def _on_step(self) -> bool:
+        return True
+
+    def _on_rollout_end(self) -> None:
+        logger_values = self.model.logger.name_to_value
+
+        clip_fraction = logger_values.get(
+            "train/clip_fraction"
+        )
+
+        # approx_kl = logger_values.get(
+        #     "train/approx_kl"
+        # )
+
+        if clip_fraction is not None:
+            self.steps.append(
+                self.num_timesteps
+            )
+
+            self.clip_fractions.append(
+                clip_fraction
+            )
+
+            # self.approx_kls.append(
+            #     approx_kl
+            # )
+
 
 def train_with_parameters(
-    filename: str, env_params: dict[str, Any] | None = None, model_params: dict[str, Any] | None = None
+    filename: str, env_params: dict[str, Any] | None = None, model_params: dict[str, Any] | None = None, record_clipping: bool = False
 ):
     if env_params is None:
         env_params = {}
@@ -93,11 +128,16 @@ def train_with_parameters(
     model = PPO(policy="MlpPolicy", env=env, verbose=0, seed=1234, **base_model_params)
 
     eval_callback = TrainingEvaluationCallback()
+    if record_clipping:
+        diagnostics_callback = PPOTrainingDiagnosticsCallback()
+        callbacks = [eval_callback, diagnostics_callback]
+    else:
+        callbacks = eval_callback
 
     print(f"Training model {filename}...")
     model.learn(
         total_timesteps=100_000,
-        callback=eval_callback,
+        callback=callbacks,
         progress_bar=True,
     )
     model.save(filename)
@@ -117,6 +157,13 @@ def train_with_parameters(
         mean_control_efforts=eval_callback.mean_control_efforts,
         std_control_efforts=eval_callback.std_control_efforts,
     )
+
+    if record_clipping:
+        np.savez(
+            f"ppo_diagnostics_{filename}.npz",
+            steps=diagnostics_callback.steps,
+            clip_fraction=diagnostics_callback.clip_fractions
+        )
 
 
 if __name__ == "__main__":
