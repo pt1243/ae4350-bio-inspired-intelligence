@@ -37,22 +37,14 @@ NETWORK_SIZES = [[8, 8], [16, 16], [32, 32], [64, 64], [128, 128]]
 #     return str(value)
 
 
-def train_if_needed(
-    model_name: str,
-    model_params: dict,
-    record_clipping: bool = False
-):
+def train_if_needed(model_name: str, model_params: dict, record_clipping: bool = False):
     data_path = Path(f"learning_curve_{model_name}.npz")
 
     if data_path.exists():
         print(f"Trained data for {model_name} exists, continuing...")
         return data_path
 
-    train_with_parameters(
-        filename=model_name,
-        model_params=model_params,
-        record_clipping=record_clipping
-    )
+    train_with_parameters(filename=model_name, model_params=model_params, record_clipping=record_clipping)
 
     return data_path
 
@@ -120,55 +112,30 @@ def run_clip_range_sweep():
         params = NOMINAL_PARAMS.copy()
         params["clip_range"] = clip_range
 
-        value_name = (
-            str(clip_range)
-            .replace(".", "p")
-        )
+        value_name = str(clip_range).replace(".", "p")
 
-        name = (
-            f"sensitivity_clip_range_{value_name}"
-        )
+        name = f"sensitivity_clip_range_{value_name}"
 
-        data_path = train_if_needed(
-            name,
-            params
-        )
+        data_path = train_if_needed(name, params)
 
-        mean, std = get_final_safety(
-            data_path
-        )
+        mean, std = get_final_safety(data_path)
 
         # Load training diagnostics
-        diagnostics_path = Path(
-            f"ppo_diagnostics_{name}.npz"
-        )
+        diagnostics_path = Path(f"ppo_diagnostics_{name}.npz")
 
         mean_clip_fraction = np.nan
 
         if diagnostics_path.exists():
-            diagnostics = np.load(
-                diagnostics_path
-            )
+            diagnostics = np.load(diagnostics_path)
 
-            clip_fractions = diagnostics[
-                "clip_fraction"
-            ]
+            clip_fractions = diagnostics["clip_fraction"]
 
-            mean_clip_fraction = np.mean(
-                clip_fractions
-            )
+            mean_clip_fraction = np.mean(clip_fractions)
 
-            print(
-                f"clip_range = {clip_range:.3f} "
-                f"-> mean clip fraction = "
-                f"{mean_clip_fraction:.4f}"
-            )
+            print(f"clip_range = {clip_range:.3f} -> mean clip fraction = {mean_clip_fraction:.4f}")
 
         else:
-            print(
-                f"clip_range = {clip_range:.3f} "
-                f"-> diagnostics file not found"
-            )
+            print(f"clip_range = {clip_range:.3f} -> diagnostics file not found")
 
         results.append(
             (
@@ -218,11 +185,7 @@ def plot_sensitivity(
     clip_results,
     network_results,
 ):
-    fig, axes = plt.subplots(
-        2,
-        2,
-        figsize=(11, 8)
-    )
+    fig, axes = plt.subplots(2, 2, figsize=(11, 8))
 
     axes = axes.flatten()
 
@@ -235,17 +198,11 @@ def plot_sensitivity(
     # Learning rate
     # --------------------------------------------------------
 
-    lr_values = np.array([
-        r[0] for r in learning_rate_results
-    ])
+    lr_values = np.array([r[0] for r in learning_rate_results])
 
-    lr_means = np.array([
-        r[1] for r in learning_rate_results
-    ])
+    lr_means = np.array([r[1] for r in learning_rate_results])
 
-    lr_stds = np.array([
-        r[2] for r in learning_rate_results
-    ])
+    lr_stds = np.array([r[2] for r in learning_rate_results])
 
     axes[0].errorbar(
         lr_values,
@@ -274,17 +231,11 @@ def plot_sensitivity(
     # Gamma / discount-factor sensitivity
     # --------------------------------------------------------
 
-    gamma_values = np.array([
-        r[0] for r in gamma_results
-    ])
+    gamma_values = np.array([r[0] for r in gamma_results])
 
-    gamma_means = np.array([
-        r[1] for r in gamma_results
-    ])
+    gamma_means = np.array([r[1] for r in gamma_results])
 
-    gamma_stds = np.array([
-        r[2] for r in gamma_results
-    ])
+    gamma_stds = np.array([r[2] for r in gamma_results])
 
     # Plot logarithmically in terms of (1 - gamma)
     discount_rates = 1.0 - gamma_values
@@ -307,41 +258,26 @@ def plot_sensitivity(
 
     # Show gamma values as the tick labels
     axes[1].set_xticks(discount_rates)
-    axes[1].set_xticklabels([
-        f"{gamma:g}"
-        for gamma in gamma_values
-    ])
+    axes[1].set_xticklabels([f"{gamma:g}" for gamma in gamma_values])
 
     # Reverse so gamma increases from left to right
     axes[1].invert_xaxis()
 
-    axes[1].set_xlabel(
-        r"Discount factor $\gamma$"
-    )
-    axes[1].set_ylabel(
-        "Touchdown safety"
-    )
+    axes[1].set_xlabel(r"Discount factor $\gamma$")
+    axes[1].set_ylabel("Touchdown safety")
     axes[1].set_ylim(0, 1)
-    axes[1].set_title(
-        "Discount-factor sensitivity"
-    )
+    axes[1].set_title("Discount-factor sensitivity")
     axes[1].grid(True)
 
     # --------------------------------------------------------
     # Clip range
     # --------------------------------------------------------
 
-    clip_values = np.array([
-        r[0] for r in clip_results
-    ])
+    clip_values = np.array([r[0] for r in clip_results])
 
-    clip_means = np.array([
-        r[1] for r in clip_results
-    ])
+    clip_means = np.array([r[1] for r in clip_results])
 
-    clip_stds = np.array([
-        r[2] for r in clip_results
-    ])
+    clip_stds = np.array([r[2] for r in clip_results])
 
     axes[2].errorbar(
         clip_values,
@@ -366,17 +302,11 @@ def plot_sensitivity(
     # Network size
     # --------------------------------------------------------
 
-    network_labels = [
-        r[0] for r in network_results
-    ]
+    network_labels = [r[0] for r in network_results]
 
-    network_means = np.array([
-        r[1] for r in network_results
-    ])
+    network_means = np.array([r[1] for r in network_results])
 
-    network_stds = np.array([
-        r[2] for r in network_results
-    ])
+    network_stds = np.array([r[2] for r in network_results])
 
     x = np.arange(len(network_labels))
 
@@ -388,9 +318,7 @@ def plot_sensitivity(
         capsize=4,
     )
 
-    nominal_network_index = (
-        network_labels.index(nominal_network)
-    )
+    nominal_network_index = network_labels.index(nominal_network)
 
     axes[3].axvline(
         nominal_network_index,
@@ -400,9 +328,7 @@ def plot_sensitivity(
     axes[3].set_xticks(x)
     axes[3].set_xticklabels(network_labels)
 
-    axes[3].set_xlabel(
-        "Actor/critic hidden layers"
-    )
+    axes[3].set_xlabel("Actor/critic hidden layers")
     axes[3].set_ylabel("Touchdown safety")
     axes[3].set_ylim(0, 1)
     axes[3].set_title("Network-size sensitivity")
@@ -412,9 +338,7 @@ def plot_sensitivity(
     # Shared legend
     # --------------------------------------------------------
 
-    handles, labels = (
-        axes[0].get_legend_handles_labels()
-    )
+    handles, labels = axes[0].get_legend_handles_labels()
 
     fig.legend(
         handles,
@@ -424,40 +348,25 @@ def plot_sensitivity(
         bbox_to_anchor=(0.5, 0.01),
     )
 
-    fig.tight_layout(
-        rect=[0, 0.06, 1, 1]
-    )
+    fig.tight_layout(rect=[0, 0.06, 1, 1])
 
-    fig.savefig(
-        "ppo_hyperparameter_sensitivity.pdf",
-        bbox_inches="tight",
-        dpi=300
-    )
+    fig.savefig("ppo_hyperparameter_sensitivity.pdf", bbox_inches="tight", dpi=300)
 
     return fig, axes
+
 
 def plot_learning_rate_histories():
     learning_rates = LEARNING_RATES
 
-    fig, ax = plt.subplots(
-        figsize=(8, 5)
-    )
+    fig, ax = plt.subplots(figsize=(8, 5))
 
     for lr in learning_rates:
-        model_name = (
-            "sensitivity_learning_rate_"
-            f"{lr:.0e}"
-        )
+        model_name = f"sensitivity_learning_rate_{lr:.0e}"
 
-        data_path = Path(
-            f"learning_curve_{model_name}.npz"
-        )
+        data_path = Path(f"learning_curve_{model_name}.npz")
 
         if not data_path.exists():
-            print(
-                f"Skipping {lr:g}: "
-                f"{data_path} not found."
-            )
+            print(f"Skipping {lr:g}: {data_path} not found.")
             continue
 
         data = np.load(data_path)
@@ -475,13 +384,11 @@ def plot_learning_rate_histories():
             mean_returns,
             marker="o",
             label=label,
-)
+        )
 
     ax.set_xlabel("Training steps")
     ax.set_ylabel("Mean evaluation return")
-    ax.set_title(
-        "Effect of learning rate on PPO training"
-    )
+    ax.set_title("Effect of learning rate on PPO training")
 
     ax.grid(True)
     ax.legend()
@@ -491,30 +398,17 @@ def plot_learning_rate_histories():
 
     return fig, ax
 
+
 if __name__ == "__main__":
+    lr_results = run_learning_rate_sweep()
 
-    lr_results = (
-        run_learning_rate_sweep()
-    )
+    gamma_results = run_gamma_sweep()
 
-    gamma_results = (
-        run_gamma_sweep()
-    )
+    clip_results = run_clip_range_sweep()
 
-    clip_results = (
-        run_clip_range_sweep()
-    )
+    network_results = run_network_sweep()
 
-    network_results = (
-        run_network_sweep()
-    )
-
-    plot_sensitivity(
-        lr_results,
-        gamma_results,
-        clip_results,
-        network_results
-    )
+    plot_sensitivity(lr_results, gamma_results, clip_results, network_results)
     plot_learning_rate_histories()
 
     plt.show()

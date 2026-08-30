@@ -128,18 +128,10 @@ def plot_training_progress():
     # ---------------------------------------------------------
     # Episode return
     # ---------------------------------------------------------
-    axes[0].plot(
-        steps,
-        means_return,
-        label="Mean"
-    )
+    axes[0].plot(steps, means_return, label="Mean")
 
     axes[0].fill_between(
-        steps,
-        means_return - stds_return,
-        means_return + stds_return,
-        alpha=0.2,
-        label="±1 standard deviation"
+        steps, means_return - stds_return, means_return + stds_return, alpha=0.2, label="±1 standard deviation"
     )
 
     axes[0].set_ylabel("Return")
@@ -149,17 +141,9 @@ def plot_training_progress():
     # ---------------------------------------------------------
     # Touchdown safety
     # ---------------------------------------------------------
-    axes[1].plot(
-        steps,
-        means_safety
-    )
+    axes[1].plot(steps, means_safety)
 
-    axes[1].fill_between(
-        steps,
-        means_safety - stds_safety,
-        means_safety + stds_safety,
-        alpha=0.2
-    )
+    axes[1].fill_between(steps, means_safety - stds_safety, means_safety + stds_safety, alpha=0.2)
 
     axes[1].set_ylabel("Safety score")
     axes[1].set_ylim(0, 1)
@@ -168,17 +152,9 @@ def plot_training_progress():
     # ---------------------------------------------------------
     # Touchdown velocity
     # ---------------------------------------------------------
-    axes[2].plot(
-        steps,
-        means_speed
-    )
+    axes[2].plot(steps, means_speed)
 
-    axes[2].fill_between(
-        steps,
-        means_speed - stds_speed,
-        means_speed + stds_speed,
-        alpha=0.2
-    )
+    axes[2].fill_between(steps, means_speed - stds_speed, means_speed + stds_speed, alpha=0.2)
 
     axes[2].set_ylabel("Touchdown speed\n[m/s]")
     axes[2].grid(True)
@@ -186,17 +162,9 @@ def plot_training_progress():
     # ---------------------------------------------------------
     # Control effort
     # ---------------------------------------------------------
-    axes[3].plot(
-        steps,
-        means_effort
-    )
+    axes[3].plot(steps, means_effort)
 
-    axes[3].fill_between(
-        steps,
-        means_effort - stds_effort,
-        means_effort + stds_effort,
-        alpha=0.2
-    )
+    axes[3].fill_between(steps, means_effort - stds_effort, means_effort + stds_effort, alpha=0.2)
 
     axes[3].set_ylabel(
         r"Control effort"
@@ -208,17 +176,9 @@ def plot_training_progress():
     # ---------------------------------------------------------
     # Target distance
     # ---------------------------------------------------------
-    axes[4].plot(
-        steps,
-        means_distance
-    )
+    axes[4].plot(steps, means_distance)
 
-    axes[4].fill_between(
-        steps,
-        means_distance - stds_distance,
-        means_distance + stds_distance,
-        alpha=0.2
-    )
+    axes[4].fill_between(steps, means_distance - stds_distance, means_distance + stds_distance, alpha=0.2)
 
     axes[4].set_ylabel("Target error\n[m]")
     axes[4].set_xlabel("Training steps")
@@ -226,17 +186,9 @@ def plot_training_progress():
 
     handles, labels = axes[0].get_legend_handles_labels()
 
-    fig.legend(
-        handles,
-        labels,
-        loc="lower center",
-        ncol=2,
-        bbox_to_anchor=(0.5, 0.01)
-    )
+    fig.legend(handles, labels, loc="lower center", ncol=2, bbox_to_anchor=(0.5, 0.01))
 
-    fig.tight_layout(
-        rect=[0, 0.05, 1, 1]
-    )
+    fig.tight_layout(rect=[0, 0.05, 1, 1])
 
     return fig, axes
 

@@ -72,6 +72,7 @@ class TrainingEvaluationCallback(BaseCallback):
 
         return True
 
+
 class PPOTrainingDiagnosticsCallback(BaseCallback):
     def __init__(self):
         super().__init__()
@@ -86,22 +87,16 @@ class PPOTrainingDiagnosticsCallback(BaseCallback):
     def _on_rollout_end(self) -> None:
         logger_values = self.model.logger.name_to_value
 
-        clip_fraction = logger_values.get(
-            "train/clip_fraction"
-        )
+        clip_fraction = logger_values.get("train/clip_fraction")
 
         # approx_kl = logger_values.get(
         #     "train/approx_kl"
         # )
 
         if clip_fraction is not None:
-            self.steps.append(
-                self.num_timesteps
-            )
+            self.steps.append(self.num_timesteps)
 
-            self.clip_fractions.append(
-                clip_fraction
-            )
+            self.clip_fractions.append(clip_fraction)
 
             # self.approx_kls.append(
             #     approx_kl
@@ -109,7 +104,10 @@ class PPOTrainingDiagnosticsCallback(BaseCallback):
 
 
 def train_with_parameters(
-    filename: str, env_params: dict[str, Any] | None = None, model_params: dict[str, Any] | None = None, record_clipping: bool = False
+    filename: str,
+    env_params: dict[str, Any] | None = None,
+    model_params: dict[str, Any] | None = None,
+    record_clipping: bool = False,
 ):
     if env_params is None:
         env_params = {}
@@ -162,7 +160,7 @@ def train_with_parameters(
         np.savez(
             f"ppo_diagnostics_{filename}.npz",
             steps=diagnostics_callback.steps,
-            clip_fraction=diagnostics_callback.clip_fractions
+            clip_fraction=diagnostics_callback.clip_fractions,
         )
 
 
