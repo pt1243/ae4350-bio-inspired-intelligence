@@ -79,10 +79,7 @@ def plot_time_markers(ax, episode_data, interval=20.0):
 
             ax.annotate(
                 f"{time:.0f}s",
-                (
-                    predictions[i, 0],
-                    predictions[i, 1],
-                ),
+                (predictions[i, 0], predictions[i, 1]),
                 xytext=(5, 5),
                 textcoords="offset points",
                 fontsize=8,
@@ -96,12 +93,12 @@ def plot_control_effort(ax, episode_data):
 
     actions = episode_data["actions"]
 
-    ax.plot(times, actions[:, 0], label="Horizontal")
-    ax.plot(times, actions[:, 1], label="Vertical")
+    ax.plot(times, actions[:, 0], label="x")
+    ax.plot(times, actions[:, 1], label="y")
 
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Acceleration output [-]")
-    ax.set_title("Control effort during descent")
+    ax.set_title("Acceleration commands during descent")
     ax.set_ylim(-1.1, 1.1)
 
     ax.grid(True)

@@ -109,7 +109,7 @@ def plot_hazard_map_components(hazard_map: np.ndarray, coarse_cost: np.ndarray, 
         vmax=hazard_max,
     )
     fig.colorbar(img_0, ax=axs[0], label="Hazard level", fraction=0.045, pad=0.04)
-    axs[0].set_title("Large-scale terrain")
+    axs[0].set_title("Large-scale terrain hazard")
     axs[0].set_xlabel("x [m]")
     axs[0].set_ylabel("y [m]")
 

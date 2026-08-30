@@ -9,80 +9,23 @@ from stable_baselines3.common.monitor import Monitor
 from environment import LunarHazardEnvironment
 
 
-# ============================================================
-# Configuration
-# ============================================================
-
 TRAINING_STEPS = 100_000
 N_EVAL_EPISODES = 100
 
 TRAINING_SEED = 0
 EVAL_SEED_START = 40_000
 
-
-# ------------------------------------------------------------
-# Nominal reward parameters
-# ------------------------------------------------------------
-
-NOMINAL_REWARDS = {
-    "control_weight": 5.0,
-    "velocity_weight": 20.0,
-    "safety_weight": 100.0,
-    "target_weight": 20.0,
-}
-
-
-# ------------------------------------------------------------
-# Reward-weight sensitivity ranges
-# ------------------------------------------------------------
+NOMINAL_REWARDS = {"control_weight": 5.0, "velocity_weight": 20.0, "safety_weight": 100.0, "target_weight": 20.0}
 
 REWARD_SWEEPS = {
-    "control_weight": [
-        0.5,
-        1.5,
-        5.0,
-        15.0,
-        50.0,
-    ],
-    "velocity_weight": [
-        2.0,
-        6.0,
-        20.0,
-        60.0,
-        200.0,
-    ],
-    "safety_weight": [
-        10.0,
-        30.0,
-        100.0,
-        300.0,
-        1000.0,
-    ],
-    "target_weight": [
-        2.0,
-        6.0,
-        20.0,
-        60.0,
-        200.0,
-    ],
+    "control_weight": [0.5, 1.5, 5.0, 15.0, 50.0],
+    "velocity_weight": [2.0, 6.0, 20.0, 60.0, 200.0],
+    "safety_weight": [10.0, 30.0, 100.0, 300.0, 1000.0],
+    "target_weight": [2.0, 6.0, 20.0, 60.0, 200.0],
 }
 
 
-# ------------------------------------------------------------
-# Nominal PPO settings
-# ------------------------------------------------------------
-
-MODEL_PARAMS = {
-    "learning_rate": 3e-4,
-    "gamma": 0.999,
-    "gae_lambda": 0.99,
-    "clip_range": 0.2,
-}
-
-
-# ============================================================
-# Evaluation
-# ============================================================
+MODEL_PARAMS = {"learning_rate": 3e-4, "gamma": 0.999, "gae_lambda": 0.99, "clip_range": 0.2}
 
 
 def evaluate_model(
@@ -106,29 +49,13 @@ def evaluate_model(
         control_effort = 0.0
 
         while not (terminated or truncated):
-            action, _ = model.predict(
-                obs,
-                deterministic=True,
-            )
-
+            action, _ = model.predict(obs, deterministic=True)
             acceleration = action * env.max_acceleration
-
             control_effort += np.sum(acceleration**2) * env.dt
-
-            (
-                obs,
-                reward,
-                terminated,
-                truncated,
-                info,
-            ) = env.step(action)
-
+            obs, reward, terminated, truncated, info = env.step(action)
         safeties.append(info["touchdown_safety"])
-
         speeds.append(info["touchdown_speed"])
-
         target_errors.append(info["target_error"])
-
         control_efforts.append(control_effort)
 
     env.close()
@@ -152,11 +79,6 @@ def evaluate_model(
     }
 
 
-# ============================================================
-# File naming
-# ============================================================
-
-
 def format_value(value):
     """
     Convert numerical weight into a convenient filename string.
@@ -165,41 +87,23 @@ def format_value(value):
     return f"{value:g}".replace(".", "p")
 
 
-def get_result_filename(
-    parameter_name,
-    value,
-):
+def get_result_filename(parameter_name, value):
     value_string = format_value(value)
 
     return Path(f"reward_sensitivity_{parameter_name}_{value_string}.npz")
 
 
-def get_model_filename(
-    parameter_name,
-    value,
-):
+def get_model_filename(parameter_name, value):
     value_string = format_value(value)
 
     return f"reward_sensitivity_{parameter_name}_{value_string}"
-
-
-# ============================================================
-# Run one reward configuration
-# ============================================================
 
 
 def run_configuration(
     parameter_name,
     value,
 ):
-    result_path = get_result_filename(
-        parameter_name,
-        value,
-    )
-
-    # --------------------------------------------------------
-    # Existing result
-    # --------------------------------------------------------
+    result_path = get_result_filename(parameter_name, value)
 
     if result_path.exists():
         print(f"Loading existing result: {result_path}")
@@ -220,21 +124,10 @@ def run_configuration(
             "std_control_effort": float(data["std_control_effort"]),
         }
 
-    # --------------------------------------------------------
-    # Environment parameters
-    # --------------------------------------------------------
-
     env_params = NOMINAL_REWARDS.copy()
-
     env_params[parameter_name] = value
-
     env = LunarHazardEnvironment(**env_params)
-
     env = Monitor(env)
-
-    # --------------------------------------------------------
-    # PPO
-    # --------------------------------------------------------
 
     model = PPO(
         policy="MlpPolicy",
@@ -245,107 +138,49 @@ def run_configuration(
     )
 
     print(f"\nTraining {parameter_name} = {value:g}")
-
-    model.learn(
-        total_timesteps=TRAINING_STEPS,
-        progress_bar=True,
-    )
-
-    model_name = get_model_filename(
-        parameter_name,
-        value,
-    )
-
+    model.learn(total_timesteps=TRAINING_STEPS, progress_bar=True)
+    model_name = get_model_filename(parameter_name, value)
     model.save(model_name)
-
     env.close()
 
-    # --------------------------------------------------------
-    # Evaluate
-    # --------------------------------------------------------
-
-    metrics = evaluate_model(
-        model,
-        env_params,
-    )
+    metrics = evaluate_model(model, env_params)
 
     print(f"  safety = {metrics['mean_safety']:.3f} ± {metrics['std_safety']:.3f} (min {metrics['min_safety']:.3f})")
-
     print(
         f"  touchdown speed = "
         f"{metrics['mean_speed']:.3f} "
         f"± {metrics['std_speed']:.3f} m/s "
         f"(max {metrics['max_speed']:.3f})"
     )
-
     print(f"  target error = {metrics['mean_target_error']:.2f} ± {metrics['std_target_error']:.2f} m")
-
     print(f"  control effort = {metrics['mean_control_effort']:.4f} ± {metrics['std_control_effort']:.4f}")
 
-    # --------------------------------------------------------
-    # Save
-    # --------------------------------------------------------
+    np.savez(result_path, parameter_name=parameter_name, value=value, **metrics)
 
-    np.savez(
-        result_path,
-        parameter_name=parameter_name,
-        value=value,
-        **metrics,
-    )
-
-    return {
-        "value": value,
-        **metrics,
-    }
-
-
-# ============================================================
-# Run complete sweep
-# ============================================================
+    return {"value": value, **metrics}
 
 
 def run_reward_sensitivity():
 
     all_results = {}
 
-    for (
-        parameter_name,
-        values,
-    ) in REWARD_SWEEPS.items():
+    for parameter_name, values in REWARD_SWEEPS.items():
         print("\n")
         print("=" * 70)
         print(f"SENSITIVITY: {parameter_name}")
         print("=" * 70)
 
         results = []
-
         for value in values:
-            result = run_configuration(
-                parameter_name,
-                value,
-            )
-
+            result = run_configuration(parameter_name, value)
             results.append(result)
-
         all_results[parameter_name] = results
-
     return all_results
 
 
-# ============================================================
-# Plot safety sensitivity
-# ============================================================
+def plot_reward_sensitivity(all_results):
 
-
-def plot_reward_sensitivity(
-    all_results,
-):
-
-    fig, axes = plt.subplots(
-        2,
-        2,
-        figsize=(8, 6),
-    )
+    fig, axes = plt.subplots(2, 2, figsize=(8, 6))
 
     axes = axes.flatten()
 
@@ -368,21 +203,11 @@ def plot_reward_sensitivity(
         ),
     ]
 
-    for ax, (
-        parameter_name,
-        title,
-    ) in zip(
-        axes,
-        plot_settings,
-    ):
+    for ax, (parameter_name, title) in zip(axes, plot_settings):
         results = all_results[parameter_name]
-
         values = np.array([r["value"] for r in results])
-
         mean_safety = np.array([r["mean_safety"] for r in results])
-
         std_safety = np.array([r["std_safety"] for r in results])
-
         min_safety = np.array([r["min_safety"] for r in results])
 
         # Mean ± standard deviation
@@ -399,23 +224,13 @@ def plot_reward_sensitivity(
         # Log scale because sweep spans
         # approximately two orders of magnitude.
         ax.set_xscale("log")
-
         ax.set_xlabel("Reward weight [-]")
-
         ax.set_ylabel("Touchdown safety [-]")
-
         ax.set_ylim(0, 1)
-
         ax.set_title(title)
-
         ax.grid(True, which="both")
 
-    # --------------------------------------------------------
-    # Shared legend
-    # --------------------------------------------------------
-
     handles, labels = axes[0].get_legend_handles_labels()
-
     fig.legend(
         reversed(handles),
         reversed(labels),
@@ -429,15 +244,7 @@ def plot_reward_sensitivity(
     return fig, axes
 
 
-# ============================================================
-# Print summary
-# ============================================================
-
-
-def print_summary(
-    all_results,
-):
-
+def print_summary(all_results):
     print("\n")
     print("=" * 90)
     print("REWARD-WEIGHT SENSITIVITY SUMMARY")
@@ -462,10 +269,6 @@ def print_summary(
                 f"{result['mean_control_effort']:.4f}"
             )
 
-
-# ============================================================
-# Main
-# ============================================================
 
 if __name__ == "__main__":
     results = run_reward_sensitivity()
